@@ -7,7 +7,6 @@ project(
   HOMEPAGE_URL "https://github.com/LuxAter/vml")
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   set(VML_MAIN_PROJECT TRUE)
-  set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 else()
   set(VML_MAIN_PROJECT FALSE)
 endif()
@@ -21,6 +20,16 @@ include(CMakePackageConfigHelpers)
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
+if(VML_MAIN_PROJECT AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+  if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json")
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json
+              ${CMAKE_CURRENT_SOURCE_DIR}/compile_commands.json)
+  endif()
+endif()
+
 target_include_directories(
   ${PROJECT_NAME}
   INTERFACE $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include>
@@ -32,6 +41,7 @@ if(VML_TESTS)
   set(SOURCES tests/core.cpp)
   add_executable(unit-tests ${SOURCES})
   target_link_libraries(unit-tests ${PROJECT_NAME})
+  add_test(NAME unit-tests COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unit-tests)
 endif()
 
 if(VML_INSTALL)
