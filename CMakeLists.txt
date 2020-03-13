@@ -41,7 +41,7 @@ if(VML_TESTS)
 
   find_package(OpenACC QUIET)
 
-  set(SOURCES tests/core.cpp tests/benchmarks.cpp)
+  set(SOURCES tests/core.cpp)
   add_executable(unit-tests ${SOURCES})
 
   if(OpenACC_CXX_FOUND)
