@@ -33,6 +33,27 @@ namespace detail {
     static_for<Begin + 1, End>(std::forward<Func>(f));
   }
 
+  template <size_t Begin, size_t End, class Func>
+  inline constexpr typename std::enable_if<Begin == End, bool>::type
+  static_or(Func &&) {
+    return false;
+  }
+  template <size_t Begin, size_t End, class Func>
+  inline constexpr typename std::enable_if<Begin != End, bool>::type
+  static_or(Func &&f) {
+    return f(Begin) || static_or<Begin + 1, End>(std::forward<Func>(f));
+  }
+  template <size_t Begin, size_t End, class Func>
+  inline constexpr typename std::enable_if<Begin == End, bool>::type
+  static_and(Func &&) {
+    return true;
+  }
+  template <size_t Begin, size_t End, class Func>
+  inline constexpr typename std::enable_if<Begin != End, bool>::type
+  static_and(Func &&f) {
+    return f(Begin) && static_and<Begin + 1, End>(std::forward<Func>(f));
+  }
+
   template <typename T, size_t N, class Func>
   inline constexpr vector<T, N> static_constructor(Func &&f) {
     vector<T, N> tmp;
@@ -102,16 +123,39 @@ namespace detail {
       return data[(MASK >> (8 * (M - 1))) & 0xFF];
     }
     swizzle &operator=(const vector_type &vec) {
-      scalar_type tmp[M];
       for (size_t i = 0; i < M; ++i)
-        tmp[i] = vec[i];
+        (*this)[i] = vec[i];
+      return *this;
+    }
+
+    swizzle &operator+=(const vector_type &vec) {
       for (size_t i = 0; i < M; ++i)
-        (*this)[i] = tmp[i];
+        (*this)[i] += vec[i];
+      return *this;
+    }
+    swizzle &operator-=(const vector_type &vec) {
+      for (size_t i = 0; i < M; ++i)
+        (*this)[i] -= vec[i];
+      return *this;
+    }
+    swizzle &operator*=(const vector_type &vec) {
+      for (size_t i = 0; i < M; ++i)
+        (*this)[i] *= vec[i];
+      return *this;
+    }
+    swizzle &operator/=(const vector_type &vec) {
+      for (size_t i = 0; i < M; ++i)
+        (*this)[i] /= vec[i];
       return *this;
     }
   };
 
-  template <typename T, size_t N> struct vector_base;
+  template <typename T, size_t N> struct vector_base {
+    typedef T scalar_type;
+    union {
+      scalar_type data[N];
+    };
+  };
 
   template <typename T> struct vector_base<T, 1> {
     typedef T scalar_type;
@@ -860,6 +904,10 @@ namespace detail {
     }
   }
 
+  template <typename T, typename CharT = char>
+  std::basic_string<CharT> fmt(const T &v) {
+    return std::to_string(v);
+  }
   template <typename T, size_t N, typename CharT = char>
   std::basic_string<CharT> fmt(const vector<T, N> &v) {
     std::basic_string<CharT> out = "(" + std::to_string(v[0]);
@@ -918,6 +966,10 @@ struct vector : public ::vml::detail::vector_base<T, N> {
   }
 
   constexpr inline size_t size() const { return N; }
+  constexpr inline T *begin() { return std::begin(data); }
+  constexpr inline const T *begin() const { return std::begin(data); }
+  constexpr inline T *end() { return std::end(data); }
+  constexpr inline const T *end() const { return std::end(data); }
 
   scalar_type &operator[](size_t i) { return data[i]; }
   const scalar_type &operator[](size_t i) const { return data[i]; }
@@ -1011,6 +1063,19 @@ struct vector : public ::vml::detail::vector_base<T, N> {
   friend vector_type operator/(const vector_type &a, const vector_type &b) {
     return ::vml::detail::static_constructor<T, N>(
         [&](size_t i) { return a[i] / b[i]; });
+  }
+
+  friend typename std::conditional<N == 1, bool, ::vml::detail::nothing>::type
+  operator==(const vector_type &a, const T &b) {
+    return a[0] == b;
+  }
+  friend bool operator==(const vector_type &a, const vector_type &b) {
+    return ::vml::detail::static_and<0, N>(
+        [&](size_t i) { return a[i] == b[i]; });
+  }
+  friend bool operator!=(const vector_type &a, const vector_type &b) {
+    return ::vml::detail::static_or<0, N>(
+        [&](size_t i) { return a[i] != b[i]; });
   }
 
 private:

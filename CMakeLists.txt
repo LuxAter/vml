@@ -38,8 +38,19 @@ target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_11 cxx_constexpr)
 
 if(VML_TESTS)
   enable_testing()
-  set(SOURCES tests/core.cpp)
+
+  find_package(OpenACC QUIET)
+
+  set(SOURCES tests/core.cpp tests/benchmarks.cpp)
   add_executable(unit-tests ${SOURCES})
+
+  if(OpenACC_CXX_FOUND)
+    target_link_libraries(unit-tests ${OpenACC_CXX_LIBRARIES})
+    target_compile_definitions(unit-tests PUBLIC -D__USE_OPENACC__)
+    target_compile_options(unit-tests PUBLIC ${OpenACC_CXX_FLAGS})
+    target_link_options(unit-tests PUBLIC ${OpenACC_CXX_FLAGS})
+  endif()
+
   target_link_libraries(unit-tests ${PROJECT_NAME})
   add_test(NAME unit-tests COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unit-tests)
 endif()

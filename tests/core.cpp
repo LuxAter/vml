@@ -1,4 +1,5 @@
 #define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.hpp"
 
 #include "vml/vml.hpp"
@@ -33,7 +34,41 @@ TEMPLATE_TEST_CASE("vec1", "[vector][template]", uint8_t, uint16_t, uint32_t,
     a[0] = TestType(9);
     REQUIRE(a == TestType(9));
   }
+  SECTION("Comparison") {
+    vml::tvec1<TestType> a(TestType(3)), b(TestType(5));
+    REQUIRE(a != b);
+    REQUIRE(a == a);
+  }
+  SECTION("Operators") {
+    vml::tvec1<TestType> a(TestType(2)), b(TestType(3));
+    REQUIRE(a == TestType(2));
+    REQUIRE(b == TestType(3));
+    a += b;
+    REQUIRE(a == TestType(5));
+    REQUIRE(b == TestType(3));
+    a *= b;
+    REQUIRE(a == TestType(15));
+    REQUIRE(b == TestType(3));
+    a -= b;
+    REQUIRE(a == TestType(12));
+    REQUIRE(b == TestType(3));
+    a /= b;
+    REQUIRE(a == TestType(4));
+    REQUIRE(b == TestType(3));
+    a += TestType(2);
+    REQUIRE(a == TestType(6));
+    a -= TestType(3);
+    REQUIRE(a == TestType(3));
+    a *= TestType(5);
+    REQUIRE(a == TestType(15));
+    a /= TestType(5);
+    REQUIRE(a == TestType(3));
+  }
   SECTION("Swizzle") {}
+  SECTION("Fmt") {
+    vml::tvec1<TestType> a(TestType(2));
+    REQUIRE(vml::fmt(a) == std::to_string(TestType(2)));
+  }
 }
 
 TEMPLATE_TEST_CASE("vec2", "[vector][template]", uint8_t, uint16_t, uint32_t,
@@ -80,6 +115,38 @@ TEMPLATE_TEST_CASE("vec2", "[vector][template]", uint8_t, uint16_t, uint32_t,
     REQUIRE(a.y == TestType(7));
     REQUIRE(a.x == TestType(3));
   }
+  SECTION("Comparison") {
+    vml::tvec2<TestType> a(TestType(2), TestType(3)),
+        b(TestType(5), TestType(7));
+    REQUIRE(a != b);
+    REQUIRE(a == a);
+  }
+  SECTION("Operators") {
+    vml::tvec2<TestType> a(TestType(2), TestType(3)),
+        b(TestType(5), TestType(7));
+    REQUIRE(a == vml::tvec2<TestType>(TestType(2), TestType(3)));
+    REQUIRE(b == vml::tvec2<TestType>(TestType(5), TestType(7)));
+    a += b;
+    REQUIRE(a == vml::tvec2<TestType>(TestType(7), TestType(10)));
+    REQUIRE(b == vml::tvec2<TestType>(TestType(5), TestType(7)));
+    a *= b;
+    REQUIRE(a == vml::tvec2<TestType>(TestType(35), TestType(70)));
+    REQUIRE(b == vml::tvec2<TestType>(TestType(5), TestType(7)));
+    a -= b;
+    REQUIRE(a == vml::tvec2<TestType>(TestType(30), TestType(63)));
+    REQUIRE(b == vml::tvec2<TestType>(TestType(5), TestType(7)));
+    a /= b;
+    REQUIRE(a == vml::tvec2<TestType>(TestType(6), TestType(9)));
+    REQUIRE(b == vml::tvec2<TestType>(TestType(5), TestType(7)));
+    a += TestType(2);
+    REQUIRE(a == vml::tvec2<TestType>(TestType(8), TestType(11)));
+    a -= TestType(3);
+    REQUIRE(a == vml::tvec2<TestType>(TestType(5), TestType(8)));
+    a *= TestType(2);
+    REQUIRE(a == vml::tvec2<TestType>(TestType(10), TestType(16)));
+    a /= TestType(5);
+    REQUIRE(a == vml::tvec2<TestType>(TestType(2), TestType(3.2)));
+  }
   SECTION("Swizzle") {
     vml::tvec2<TestType> a(TestType(2), TestType(3));
     vml::tvec2<TestType> b = a.yx;
@@ -88,5 +155,17 @@ TEMPLATE_TEST_CASE("vec2", "[vector][template]", uint8_t, uint16_t, uint32_t,
     a.xy = a.yx;
     REQUIRE(a.x == TestType(3));
     REQUIRE(a.y == TestType(2));
+    a.xy += a.xx;
+    REQUIRE(a.x == TestType(6));
+    REQUIRE(a.y == TestType(5));
+    a.xy *= a.yy;
+    REQUIRE(a.x == TestType(30));
+    REQUIRE(a.y == TestType(25));
+    a.xy /= a.xy;
+    REQUIRE(a.x == TestType(1));
+    REQUIRE(a.y == TestType(1));
+    a.xy -= a.xy;
+    REQUIRE(a.x == TestType(0));
+    REQUIRE(a.y == TestType(0));
   }
 }
